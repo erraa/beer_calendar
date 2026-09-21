@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beer Advent Calendar &mdash; 24 Doors</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8D%BA%3C/text%3E%3C/svg%3E">
+<meta name="description" content="A festive advent calendar with 24 doors. Behind every door: a beer.">
+<style>
+  :root {
+    --bg-deep: #0b1d19;
+    --bg-mid: #103028;
+    --gold: #d9b168;
+    --gold-soft: #f0d9a8;
+    --red: #9e2b2b;
+    --red-bright: #c5433f;
+    --cream: #f7f1e3;
+    --ink: #10201c;
+    --shadow: rgba(0, 0, 0, .45);
+    --focus: #8fd6ff;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    padding: clamp(1rem, 3vw, 2.5rem) clamp(.75rem, 3vw, 2rem) 3rem;
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    color: var(--cream);
+    background-color: var(--bg-deep);
+    background-image:
+      radial-gradient(1200px 700px at 50% -10%, #17463a 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% 100%, #0d2a3a 0%, transparent 55%),
+      linear-gradient(170deg, var(--bg-mid), var(--bg-deep) 70%);
+    background-attachment: fixed;
+    min-height: 100%;
+  }
+
+  /* Subtle snow texture, purely decorative */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(2px 2px at 12% 18%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(1.5px 1.5px at 34% 62%, rgba(255,255,255,.35), transparent 60%),
+      radial-gradient(2px 2px at 68% 28%, rgba(255,255,255,.45), transparent 60%),
+      radial-gradient(1.5px 1.5px at 84% 74%, rgba(255,255,255,.30), transparent 60%),
+      radial-gradient(1.5px 1.5px at 52% 88%, rgba(255,255,255,.28), transparent 60%);
+    opacity: .7;
+  }
+
+  header, main, footer { position: relative; z-index: 1; }
+
+  header {
+    max-width: 62rem;
+    margin: 0 auto clamp(1.25rem, 3vw, 2.25rem);
+    text-align: center;
+  }
+
+  .eyebrow {
+    margin: 0 0 .5rem;
+    font-size: clamp(.7rem, 1.6vw, .8rem);
+    letter-spacing: .32em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.9rem, 6vw, 3.1rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: .01em;
+    background: linear-gradient(180deg, #fff8ea, var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tagline {
+    margin: .7rem auto 0;
+    max-width: 34rem;
+    font-size: clamp(.92rem, 2.3vw, 1.02rem);
+    line-height: 1.55;
+    color: rgba(247, 241, 227, .78);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .75rem 1rem;
+    margin-top: 1.4rem;
+  }
+
+  .progress {
+    font-size: .85rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold-soft);
+    border: 1px solid rgba(217, 177, 104, .35);
+    border-radius: 999px;
+    padding: .45rem 1rem;
+    background: rgba(0, 0, 0, .2);
+  }
+
+  .btn {
+    font: inherit;
+    font-size: .85rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gold-soft);
+    background: rgba(158, 43, 43, .22);
+    border: 1px solid rgba(217, 177, 104, .45);
+    border-radius: 999px;
+    padding: .45rem 1.15rem;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+  }
+  .btn:hover { background: var(--red); color: #fff8ea; }
+  .btn:active { transform: translateY(1px); }
+  .btn[aria-pressed="true"] { background: var(--gold); color: var(--ink); }
+
+  :where(button, [tabindex]):focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: var(--radius);
+  }
+
+  main { max-width: 62rem; margin: 0 auto; }
+
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: clamp(.6rem, 1.8vw, 1rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 30rem) {
+    .calendar { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .door {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    padding: .65rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    text-align: center;
+    font: inherit;
+    color: var(--gold-soft);
+    cursor: pointer;
+    border: 1px solid rgba(217, 177, 104, .38);
+    border-radius: var(--radius);
+    background:
+      linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,0) 45%),
+      linear-gradient(160deg, #123a30, #0d2823);
+    box-shadow: 0 10px 22px -14px var(--shadow), inset 0 1px 0 rgba(255,255,255,.08);
+    overflow: hidden;
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  }
+
+  .door::after {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, transparent, rgba(217,177,104,.6), transparent);
+    opacity: .8;
+  }
+
+  .door:hover,
+  .door:focus-visible {
+    transform: translateY(-3px);
+    border-color: var(--gold);
+    box-shadow: 0 18px 30px -16px var(--shadow), inset 0 1px 0 rgba(255,255,255,.14);
+  }
+
+  .door-number {
+    font-size: clamp(1.6rem, 5vw, 2.15rem);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--gold);
+    text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  .door-hint {
+    font-size: .68rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: rgba(247, 241, 227, .5);
+  }
+
+  /* Opened state */
+  .door[aria-pressed="true"] {
+    background:
+      linear-gradient(150deg, rgba(255,255,255,.12), rgba(255,255,255,0) 50%),
+      linear-gradient(160deg, #7a2323, #4a1616);
+    border-color: rgba(240, 217, 168, .6);
+  }
+  .door[aria-pressed="true"] .door-number {
+    font-size: clamp(.95rem, 2.6vw, 1.1rem);
+    color: var(--cream);
+  }
+  .door[aria-pressed="true"] .door-hint {
+    color: var(--gold-soft);
+    font-size: .62rem;
+  }
+
+  .door-beer {
+    font-size: clamp(.78rem, 2.1vw, .88rem);
+    line-height: 1.3;
+    color: #fff8ea;
+    display: none;
+  }
+  .door[aria-pressed="true"] .door-beer { display: block; }
+
+  .door-style {
+    font-size: .68rem;
+    letter-spacing: .06em;
+    color: rgba(247, 241, 227, .72);
+    display: none;
+  }
+  .door[aria-pressed="true"] .door-style { display: block; }
+
+  /* Dialog */
+  dialog {
+    width: min(30rem, calc(100vw - 2rem));
+    padding: 0;
+    color: var(--cream);
+    border: 1px solid rgba(217, 177, 104, .45);
+    border-radius: 18px;
+    background: linear-gradient(165deg, #14332b, #0c211d);
+    box-shadow: 0 30px 70px -30px #000;
+  }
+  dialog::backdrop { background: rgba(4, 14, 12, .72); }
+
+  .sheet { padding: clamp(1.25rem, 4vw, 2rem); }
+
+  .sheet-day {
+    margin: 0 0 .35rem;
+    font-size: .72rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .sheet-name {
+    margin: 0;
+    font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+    font-weight: 600;
+    line-height: 1.2;
+    color: #fff8ea;
+  }
+  .sheet-style {
+    margin: .3rem 0 0;
+    font-size: .9rem;
+    font-style: italic;
+    color: var(--gold-soft);
+  }
+  .sheet-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sheet-meta li {
+    font-size: .74rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .3rem .7rem;
+    border: 1px solid rgba(217, 177, 104, .3);
+    border-radius: 999px;
+    background: rgba(0,0,0,.18);
+  }
+  .sheet-note {
+    margin: 1rem 0 0;
+    font-size: .95rem;
+    line-height: 1.6;
+    color: rgba(247, 241, 227, .85);
+  }
+  .sheet-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+
+  footer {
+    max-width: 62rem;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    font-size: .8rem;
+    line-height: 1.6;
+    color: rgba(247, 241, 227, .5);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <p class="eyebrow">December, one door at a time</p>
+  <h1>The Beer Advent Calendar</h1>
+  <p class="tagline">Twenty-four doors, two beer lists. Open one a day &mdash; or all at once, we are not the police.</p>
+  <div class="toolbar">
+    <p class="progress" id="progress">0 of 24 opened</p>
+    <button type="button" class="btn" id="catalog-toggle" aria-pressed="false">Show budget beers</button>
+    <button type="button" class="btn" id="reset">Reset calendar</button>
+  </div>
+</header>
+
+<main>
+  <h2 class="visually-hidden">Calendar doors</h2>
+  <ul class="calendar" id="calendar"></ul>
+</main>
+
+<p class="visually-hidden" role="status" aria-live="polite" id="live"></p>
+
+<dialog id="sheet" aria-labelledby="sheet-name">
+  <div class="sheet">
+    <p class="sheet-day" id="sheet-day">Door</p>
+    <h2 class="sheet-name" id="sheet-name">Beer</h2>
+    <p class="sheet-style" id="sheet-style"></p>
+    <ul class="sheet-meta">
+      <li id="sheet-origin"></li>
+      <li id="sheet-abv"></li>
+    </ul>
+    <p class="sheet-note" id="sheet-note"></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn" id="sheet-close" autofocus>Cheers &mdash; close</button>
+    </div>
+  </div>
+</dialog>
+
+<footer>
+  <p>Static single-file app. Opened doors are stored locally in your browser.</p>
+  <p>Please enjoy responsibly. 18+/21+ where applicable.</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "beer-advent-calendar/opened/v1";
+  var CATALOG_KEY = "beer-advent-calendar/catalog/v1";
+
+  var BEERS = [
+    { name: "Pilsner Urquell", style: "Czech Pale Lager", origin: "Plze\u0148, Czechia", abv: "4.4%", note: "The original golden pilsner from 1842. Soft water, Saaz hops, and a bitterness that fades like a good conversation." },
+    { name: "Guinness Draught", style: "Irish Dry Stout", origin: "Dublin, Ireland", abv: "4.2%", note: "Nitro-poured, roasty and dry. Coffee and cocoa up front, a cream-thick head that refuses to hurry." },
+    { name: "Weihenstephaner Hefeweissbier", style: "German Hefeweizen", origin: "Freising, Germany", abv: "5.4%", note: "From the world's oldest brewery. Banana and clove from the yeast, wheat-soft and endlessly drinkable." },
+    { name: "Orval", style: "Belgian Trappist Pale Ale", origin: "Villers-devant-Orval, Belgium", abv: "6.2%", note: "Brettanomyces-driven and shape-shifting. Dry, hay-like, faintly funky, and different in every bottle year." },
+    { name: "Sierra Nevada Pale Ale", style: "American Pale Ale", origin: "Chico, California, USA", abv: "5.6%", note: "The beer that taught America what Cascade hops smell like. Pine, grapefruit, and a clean caramel spine." },
+    { name: "Rochefort 10", style: "Belgian Quadrupel", origin: "Rochefort, Belgium", abv: "11.3%", note: "Dark figs, port, and leather. A fireplace beer meant for a small glass and a long evening." },
+    { name: "Schlenkerla Rauchbier M\u00e4rzen", style: "Smoked M\u00e4rzen", origin: "Bamberg, Germany", abv: "5.1%", note: "Beechwood-smoked malt. Smells like a campfire, drinks like a lager. Divisive on purpose." },
+    { name: "Saison Dupont", style: "Belgian Saison", origin: "Tourpes, Belgium", abv: "6.5%", note: "The farmhouse benchmark. Peppery, bone-dry, and bracingly carbonated \u2014 built for thirst, not sipping." },
+    { name: "Duvel", style: "Belgian Strong Golden Ale", origin: "Puurs, Belgium", abv: "8.5%", note: "Deceptively pale, dangerously smooth. Pear and white pepper on a towering rocky head." },
+    { name: "Anchor Steam", style: "California Common", origin: "San Francisco, USA", abv: "4.9%", note: "Lager yeast run warm in shallow tanks. Toasty, minty-hoppy, and a slice of American brewing history." },
+    { name: "Ayinger Celebrator", style: "Doppelbock", origin: "Aying, Germany", abv: "6.7%", note: "Liquid dark bread. Toffee, raisin, and a dry chocolate finish. Comes with a tiny plastic goat." },
+    { name: "Cantillon Gueuze", style: "Lambic Gueuze", origin: "Brussels, Belgium", abv: "5.0%", note: "Spontaneously fermented, blended across vintages. Lemon, oak, and a sourness that scrubs the palate clean." },
+    { name: "Westmalle Tripel", style: "Trappist Tripel", origin: "Westmalle, Belgium", abv: "9.5%", note: "The tripel that defined the style. Orange zest, candi sugar warmth, and a finish drier than it has any right to be." },
+    { name: "Fuller's London Pride", style: "English Bitter", origin: "London, England", abv: "4.7%", note: "Marmalade and biscuit malt at cellar temperature. The pint the word \u2018session\u2019 was invented for." },
+    { name: "Founders Breakfast Stout", style: "Oatmeal Coffee Stout", origin: "Grand Rapids, Michigan, USA", abv: "8.3%", note: "Flaked oats, bitter chocolate, and two kinds of coffee. Dessert wearing a work jacket." },
+    { name: "Tr\u00f6egs Nugget Nectar", style: "Imperial Amber Ale", origin: "Hershey, Pennsylvania, USA", abv: "7.5%", note: "A late-winter hop bomb on a caramel base. Resin, tangerine, and a firm bitter snap." },
+    { name: "Schneider Aventinus", style: "Weizenbock", origin: "Kelheim, Germany", abv: "8.2%", note: "Wheat beer grown up. Dark fruit, clove, and banana bread with a warming finish." },
+    { name: "Rodenbach Grand Cru", style: "Flanders Red Ale", origin: "Roeselare, Belgium", abv: "6.0%", note: "Two years in oak foeders. Balsamic, cherry, and a sweet-sour tension that reads more like wine than beer." },
+    { name: "Pliny the Elder", style: "Double IPA", origin: "Santa Rosa, California, USA", abv: "8.0%", note: "The double IPA blueprint. Astonishingly clean for its strength \u2014 pine, citrus, and no sticky aftermath." },
+    { name: "Samuel Smith's Oatmeal Stout", style: "Oatmeal Stout", origin: "Tadcaster, England", abv: "5.0%", note: "Fermented in Yorkshire stone squares. Silky, cocoa-dark, and gently sweet without being heavy." },
+    { name: "Augustiner Helles", style: "Munich Helles", origin: "Munich, Germany", abv: "5.2%", note: "Munich's quiet favourite. Bready malt, whisper of hops, and the kind of balance that disappears by the litre." },
+    { name: "Thornbridge Jaipur", style: "English IPA (modern)", origin: "Bakewell, England", abv: "5.9%", note: "Britain's hop-forward turning point. Grapefruit and honeyed malt with a long, clean bitterness." },
+    { name: "Chimay Bleue (Grande R\u00e9serve)", style: "Belgian Dark Strong Ale", origin: "Chimay, Belgium", abv: "9.0%", note: "Cellars beautifully. Plum, nutmeg, and a warm roasted depth that rounds out over years." },
+    { name: "Samichlaus Classic", style: "Doppelbock (Christmas)", origin: "Schladming, Austria", abv: "14.0%", note: "Brewed once a year on 6 December and aged ten months. Rum-raisin, marzipan, and a very good reason to stop at one." }
+  ];
+
+  // These are real, inexpensive Swedish-market beers. Prices and local stock vary.
+  var BUDGET_BEERS = [
+    { name: "Norrlands Djup", style: "Lager", origin: "Sweden", abv: "5.3%", note: "A very cold, very uncomplicated lager. Light malt, modest bitterness, and a strong after-work energy." },
+    { name: "Sofiero Original", style: "Lager", origin: "Sweden", abv: "5.2%", note: "Pale, fizzy and straightforward, with a thin malt sweetness and the sort of finish that asks for another." },
+    { name: "Kung", style: "Lager", origin: "Sweden", abv: "5.2%", note: "A budget-classic Swedish lager: crisp enough, lightly grainy, and best served very cold." },
+    { name: "Pripps Blå", style: "Lager", origin: "Sweden", abv: "5.0%", note: "An old-school blue-label lager with gentle malt, low bitterness, and maximum barbecue compatibility." },
+    { name: "Falcon Export", style: "Lager", origin: "Falkenberg, Sweden", abv: "5.2%", note: "Clean, pale and familiar. There is no plot twist here, which is precisely the point." },
+    { name: "Spendrups Bright", style: "Lager", origin: "Sweden", abv: "5.0%", note: "Light-bodied with soft cereal malt and restrained hops. A beer that keeps its ambitions affordable." },
+    { name: "Mariestads Export", style: "Lager", origin: "Sweden", abv: "5.3%", note: "A broad, bready lager with a mild bitter edge and a dependable fridge-door presence." },
+    { name: "Three Towns Export", style: "Lager", origin: "Sweden", abv: "5.3%", note: "Simple golden lager: sweetish malt, a touch of hops, and a clean enough finish." },
+    { name: "Åbro Original", style: "Lager", origin: "Vimmerby, Sweden", abv: "5.0%", note: "Soft, pale and lightly sweet. A practical lager for when the beer budget has already been spent." },
+    { name: "Eriksberg Original", style: "Lager", origin: "Sweden", abv: "5.3%", note: "Round malt and low-key bitterness in a classic Swedish lager package." },
+    { name: "Svensk Starköl", style: "Lager", origin: "Sweden", abv: "5.0%", note: "A no-nonsense strong lager profile: pale malt, fizzy body and a short finish." },
+    { name: "Pistonhead Flat Tire", style: "Lager", origin: "Sweden", abv: "4.5%", note: "Easy-drinking and lightly hoppy, with more attitude in the can design than in the glass." },
+    { name: "Brutal Brewing No Sleep In Club", style: "Lager", origin: "Sweden", abv: "5.0%", note: "A cheerful, uncomplicated lager for late nights and questionable playlist decisions." },
+    { name: "Stockholm Festival", style: "Lager", origin: "Sweden", abv: "5.0%", note: "Pale and lightly sweet with a quick finish. Festival economics, festival complexity." },
+    { name: "Melleruds Utmärkta Pilsner", style: "Pilsner", origin: "Sweden", abv: "4.8%", note: "A little more hop snap than the average budget lager, though still firmly built for easy drinking." },
+    { name: "Spendrups Premium Lager", style: "Lager", origin: "Sweden", abv: "5.0%", note: "Mild biscuit malt, gentle carbonation and a clean finish that does exactly what it says on the label." },
+    { name: "Sofiero Gold", style: "Lager", origin: "Sweden", abv: "5.2%", note: "Golden, fizzy and mildly sweet, with a soft bitterness that disappears quickly." },
+    { name: "Norrlands Guld", style: "Lager", origin: "Sweden", abv: "5.3%", note: "Smooth and easygoing with pale malt and light hops. The dependable cabin-weekend option." },
+    { name: "Falcon Bayerskt", style: "Amber Lager", origin: "Falkenberg, Sweden", abv: "5.2%", note: "A darker budget lager with toastier malt, mild caramel and very little drama." },
+    { name: "Mariestads Old Ox", style: "Lager", origin: "Sweden", abv: "5.0%", note: "Straightforward and slightly malty, with a dry enough finish for a full evening." },
+    { name: "Blågul", style: "Lager", origin: "Sweden", abv: "5.0%", note: "Pale, fizzy and highly sessionable. The tasting note is mostly 'yes, it is cold'." },
+    { name: "Kung Organic", style: "Organic Lager", origin: "Sweden", abv: "5.2%", note: "A clean, lightly grainy organic lager that keeps things simple and inexpensive." },
+    { name: "Norrlands Djup Export", style: "Lager", origin: "Sweden", abv: "5.3%", note: "A familiar pale lager profile with sweet malt and a modest bitter finish." },
+    { name: "Sofiero Original Extra", style: "Lager", origin: "Sweden", abv: "5.2%", note: "Light malt, light hops, plenty of carbonation and no need for a tasting journal." }
+  ];
+
+  var usingBudget = loadCatalogMode();
+  var activeBeers = usingBudget ? BUDGET_BEERS : BEERS;
+
+  var calendarEl = document.getElementById("calendar");
+  var progressEl = document.getElementById("progress");
+  var liveEl = document.getElementById("live");
+  var resetEl = document.getElementById("reset");
+  var catalogToggleEl = document.getElementById("catalog-toggle");
+  var sheet = document.getElementById("sheet");
+  var sheetClose = document.getElementById("sheet-close");
+
+  var opened = loadOpened();
+  var lastTrigger = null;
+
+  function loadOpened() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+      var clean = {};
+      for (var i = 1; i <= 24; i++) {
+        if (parsed[i] === true) clean[i] = true;
+      }
+      return clean;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveOpened() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(opened));
+    } catch (e) {
+      /* private mode / quota: calendar still works for this session */
+    }
+  }
+
+  function loadCatalogMode() {
+    try { return window.localStorage.getItem(CATALOG_KEY) === "budget"; }
+    catch (e) { return false; }
+  }
+
+  function saveCatalogMode() {
+    try { window.localStorage.setItem(CATALOG_KEY, usingBudget ? "budget" : "curated"); }
+    catch (e) { /* private mode / quota: mode still works for this session */ }
+  }
+
+  function updateCatalogToggle() {
+    catalogToggleEl.textContent = usingBudget ? "Show curated beers" : "Show budget beers";
+    catalogToggleEl.setAttribute("aria-pressed", usingBudget ? "true" : "false");
+  }
+
+  function countOpened() {
+    return Object.keys(opened).length;
+  }
+
+  function updateProgress() {
+    var n = countOpened();
+    progressEl.textContent = n + " of 24 opened";
+  }
+
+  function announce(message) {
+    liveEl.textContent = "";
+    // Force a change so screen readers re-announce identical messages.
+    window.setTimeout(function () { liveEl.textContent = message; }, 40);
+  }
+
+  function buildDoor(day) {
+    var beer = activeBeers[day - 1];
+
+    var li = document.createElement("li");
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "door";
+    btn.id = "door-" + day;
+    btn.dataset.day = String(day);
+    btn.setAttribute("aria-pressed", "false");
+
+    var num = document.createElement("span");
+    num.className = "door-number";
+    num.textContent = String(day);
+
+    var beerName = document.createElement("span");
+    beerName.className = "door-beer";
+    beerName.textContent = beer.name;
+
+    var beerStyle = document.createElement("span");
+    beerStyle.className = "door-style";
+    beerStyle.textContent = beer.style;
+
+    var hint = document.createElement("span");
+    hint.className = "door-hint";
+    hint.textContent = "Open";
+
+    btn.append(num, beerName, beerStyle, hint);
+    li.appendChild(btn);
+    calendarEl.appendChild(li);
+
+    return btn;
+  }
+
+  function renderDoorState(btn) {
+    var day = Number(btn.dataset.day);
+    var beer = activeBeers[day - 1];
+    var isOpen = opened[day] === true;
+
+    btn.setAttribute("aria-pressed", isOpen ? "true" : "false");
+    btn.querySelector(".door-number").textContent = isOpen ? "Door " + day : String(day);
+    btn.querySelector(".door-hint").textContent = isOpen ? "Opened" : "Open";
+    btn.querySelector(".door-beer").textContent = beer.name;
+    btn.querySelector(".door-style").textContent = beer.style;
+    btn.setAttribute(
+      "aria-label",
+      isOpen
+        ? "Door " + day + ", opened. " + beer.name + ", " + beer.style + ". Activate for details."
+        : "Door " + day + ", closed. Activate to open."
+    );
+  }
+
+  function showSheet(day) {
+    var beer = activeBeers[day - 1];
+    document.getElementById("sheet-day").textContent = "Door " + day;
+    document.getElementById("sheet-name").textContent = beer.name;
+    document.getElementById("sheet-style").textContent = beer.style;
+    document.getElementById("sheet-origin").textContent = beer.origin;
+    document.getElementById("sheet-abv").textContent = beer.abv + " ABV";
+    document.getElementById("sheet-note").textContent = beer.note;
+
+    if (typeof sheet.showModal === "function") {
+      if (!sheet.open) sheet.showModal();
+    } else {
+      // Very old browsers: fall back to inline visibility.
+      sheet.setAttribute("open", "");
+    }
+  }
+
+  function onDoorClick(event) {
+    var btn = event.currentTarget;
+    var day = Number(btn.dataset.day);
+    var beer = activeBeers[day - 1];
+
+    if (opened[day] !== true) {
+      opened[day] = true;
+      saveOpened();
+      renderDoorState(btn);
+      updateProgress();
+      announce("Door " + day + " opened: " + beer.name + ", " + beer.style + ".");
+    }
+
+    lastTrigger = btn;
+    showSheet(day);
+  }
+
+  var doors = [];
+  for (var day = 1; day <= 24; day++) {
+    var btn = buildDoor(day);
+    btn.addEventListener("click", onDoorClick);
+    renderDoorState(btn);
+    doors.push(btn);
+  }
+  updateProgress();
+  updateCatalogToggle();
+
+  catalogToggleEl.addEventListener("click", function () {
+    if (sheet.open && typeof sheet.close === "function") sheet.close();
+    usingBudget = !usingBudget;
+    activeBeers = usingBudget ? BUDGET_BEERS : BEERS;
+    saveCatalogMode();
+    updateCatalogToggle();
+    doors.forEach(renderDoorState);
+    announce(usingBudget ? "Budget beer mode enabled. These are inexpensive beers commonly sold by Systembolaget." : "Curated beer mode enabled.");
+  });
+
+  sheetClose.addEventListener("click", function () {
+    if (typeof sheet.close === "function") sheet.close();
+    else sheet.removeAttribute("open");
+  });
+
+  sheet.addEventListener("close", function () {
+    if (lastTrigger && document.contains(lastTrigger)) lastTrigger.focus();
+    lastTrigger = null;
+  });
+
+  // Click on the backdrop closes the dialog.
+  sheet.addEventListener("click", function (event) {
+    if (event.target === sheet && typeof sheet.close === "function") sheet.close();
+  });
+
+  resetEl.addEventListener("click", function () {
+    if (countOpened() === 0) {
+      announce("Calendar is already closed. Nothing to reset.");
+      return;
+    }
+    if (!window.confirm("Close all 24 doors and start over?")) return;
+
+    opened = {};
+    saveOpened();
+    doors.forEach(renderDoorState);
+    updateProgress();
+    announce("Calendar reset. All 24 doors are closed again.");
+    doors[0].focus();
+  });
+})();
+</script>
+</body>
+</html>
